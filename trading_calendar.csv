@@ -1,0 +1,18 @@
+Date,IsTradingDay,HolidayName
+2025-03-27,True,
+2025-03-28,False,weekend
+2025-03-29,False,weekend
+2025-03-30,True,
+2025-03-31,False,eid
+2025-04-01,True,
+2025-04-02,True,
+2025-04-03,True,
+2025-04-04,False,Weekend
+2025-04-05,False,Weekend
+2025-04-06,False,public holiday
+2025-04-07,True,
+2025-04-08,True,
+2025-04-09,True,
+2025-04-10,True,
+2025-04-11,False,weekend
+2025-04-12,False,weekend
