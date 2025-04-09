@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
 import requests
-import shutil
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,27 +18,31 @@ GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
-# Define repo path
-folder_path = f"{GITHUB_REPO}"
+IN_COLAB = 'google.colab' in sys.modules # Detect if we're in Colab
+# Determine root path depending on environment
+if IN_COLAB:
+    root_path = "/content"
+else:
+    try:
+        root_path = os.path.dirname(os.path.abspath(__file__)) # For local: use script location or current working directory
+    except NameError:
+        # For interactive sessions like Jupyter
+        root_path = os.getcwd()
+
+print(f"📂 Root path set to: {root_path}")
+os.chdir(root_path)
+
+# Define path to repo folder
+folder_path = os.path.join(root_path, GITHUB_REPO)
 
 # Step 1: Check if the repo folder exists and remove the remote link
 if os.path.exists(folder_path):
-    try:
-        # Attempt to remove the remote (if it's a valid git repo)
-        os.chdir(folder_path)
-        os.system("git remote remove origin")
-        os.chdir("..")  # Go up to safely delete the folder
-        shutil.rmtree(folder_path)
-        print("✅ Old repository folder deleted successfully!")
-    except Exception as e:
-        print(f"❌ Error while removing old repository folder: {e}")
+    print("✅ Old repository folder found!")
 else:
     print("📁 Repository folder does not exist. Proceeding to clone.")
-
-
-# Step 2: Clone the repository fresh
-clone_cmd = f"git clone https://github.com/Sudipsudip5250/Nepal_Stock_Data.git"
-os.system(clone_cmd)
+    clone_cmd = f"git clone https://github.com/Sudipsudip5250/Nepal_Stock_Data.git"
+    os.system(clone_cmd)
+    print("Cloned successfully!")
 
 # Step 3: Set Git user credentials
 os.chdir(folder_path)  # Move into the cloned repo
@@ -53,10 +57,10 @@ print("Repository reset and cloned successfully!")
 
 # Define base directory
 BASE_FOLDER = "Nepse_Data"
-listed_company = "listed_company.csv"
+listed_company = "other_nepse_detail/listed_company.csv"
 
 # GitHub raw file URL
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/main/listed_company.csv"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/main/other_nepse_detail/listed_company.csv"
 
 # Check if the file exists
 if not os.path.exists(listed_company):
