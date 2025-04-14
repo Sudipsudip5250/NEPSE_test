@@ -1,12 +1,9 @@
 """
-this code will only update new holiday list 
+this code will update new holiday list
 
 """
 
 import os
-# Redirect Selenium’s cache to a local folder to avoid permission errors
-os.environ['SELENIUM_CACHE'] = os.path.join(os.getcwd(), '.selenium_cache')
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -16,7 +13,7 @@ import pandas as pd
 
 # --- Part 0: Load existing calendar (local or GitHub) ---
 
-CALANDER_CSV_PATH = "trading_calendar.csv"
+CALANDER_CSV_PATH = "other_nepse_detail/trading_calendar.csv"
 CALANDER_GITHUB_RAW = "https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/main/other_nepse_detail/trading_calendar.csv"
 
 if os.path.exists(CALANDER_CSV_PATH):
