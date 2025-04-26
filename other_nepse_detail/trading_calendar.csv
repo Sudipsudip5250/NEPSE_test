@@ -232,7 +232,7 @@ Date,IsTradingDay,HolidayName
 2025-05-15,True,
 2025-05-14,True,
 2025-05-13,True,
-2025-05-12,True,
+2025-05-12,False,Buddha Jayanti & Ubhauli parva
 2025-05-11,True,
 2025-05-10,False,Weekend
 2025-05-09,False,Weekend
@@ -243,7 +243,7 @@ Date,IsTradingDay,HolidayName
 2025-05-04,True,
 2025-05-03,False,Weekend
 2025-05-02,False,Weekend
-2025-05-01,True,
+2025-05-01,False,Labour Day
 2025-04-30,True,
 2025-04-29,True,
 2025-04-28,True,
