@@ -8,15 +8,24 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 import requests
 import sys
 from dotenv import load_dotenv
+import subprocess
 
 load_dotenv()
 # GitHub Credentials
-GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPO")
+GITHUB_USERNAME = os.getenv("USERNAME_GITHUB")
+GITHUB_TOKEN = os.getenv("TOKEN_GITHUB")
+GITHUB_REPO = os.getenv("REPO_GITHUB")
+GITHUB_USER_EMAIL = os.getenv("USER_EMAIL_GITHUB")
+
+# Verify GITHUB_TOKEN is set
+if not GITHUB_TOKEN:
+    print("❌ Error: GITHUB_TOKEN environment variable is not set.")
+    exit(1)
 
 IN_COLAB = 'google.colab' in sys.modules # Detect if we're in Colab
 # Determine root path depending on environment
@@ -35,25 +44,32 @@ os.chdir(root_path)
 # Define path to repo folder
 folder_path = os.path.join(root_path, GITHUB_REPO)
 
-# Step 1: Check if the repo folder exists and remove the remote link
-if os.path.exists(folder_path):
-    print("✅ Old repository folder found!")
-else:
+# Step 1: Check if the repo folder exists; skip cloning in GitHub Actions
+if IN_COLAB and not os.path.exists(os.path.join(root_path, "./other_nepse_detail/listed_company.csv")):
     print("📁 Repository folder does not exist. Proceeding to clone.")
     clone_cmd = f"git clone https://github.com/Sudipsudip5250/Nepal_Stock_Data.git"
-    os.system(clone_cmd)
+    result = subprocess.run(clone_cmd, shell=True, capture_output=True, text=True)
+    print(f"Clone output: {result.stdout}")
+    if result.returncode != 0:
+        print(f"❌ Clone failed: {result.stderr}")
+        exit(1)
     print("Cloned successfully!")
+else:
+    print("✅ Old repository folder found!")
 
 # Step 3: Set Git user credentials
-os.chdir(folder_path)  # Move into the cloned repo
-os.system("git config user.email 'you@example.com'")
-os.system("git config user.name 'Your Name'")
+os.system(f"git config --global user.email {GITHUB_USER_EMAIL}")
+os.system(f"git config --global user.name {GITHUB_USERNAME}")
 
 # Step 4: Reset the remote URL
-remote_cmd = f'git remote set-url origin https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git'
-os.system(remote_cmd)
-
-print("Repository reset and cloned successfully!")
+# Uncommand below 7 line if you are executing this locally its will set your origin remote
+# remote_cmd = f'git remote set-url origin https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git'
+# result = subprocess.run(remote_cmd, shell=True, capture_output=True, text=True)
+# print(f"Set remote URL output: {result.stdout}")
+# if result.returncode != 0:
+#     print(f"❌ Failed to set remote URL: {result.stderr}")
+#     exit(1)
+# print("Repository remote set successfully!")
 
 # Define base directory
 BASE_FOLDER = "Nepse_Data"
@@ -94,7 +110,8 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--log-level=3")
-driver = webdriver.Chrome(options=chrome_options)
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=chrome_options)
 wait = WebDriverWait(driver, 3)
 
 # Process each category and its symbols
@@ -213,15 +230,28 @@ for category, symbols in zip(categories, symbols_by_category):
             updated_df.to_csv(csv_filename, index=False, encoding='utf-8')
             print(f"✅ New data added for {symbol} in {csv_filename}")
 
-            # Git Add, Commit, and Push with latest scraped date
-            print(os.system("git add --all"))
+            # Git Add, Commit, and Push
+            result = subprocess.run("git add --all", shell=True, capture_output=True, text=True)
+            print(f"Git add output: {result.stdout}")
+            if result.returncode != 0:
+                print(f"❌ Git add failed: {result.stderr}")
+                continue
+
             commit_message = f'Updated {symbol} data up to {latest_scraped_date}' if latest_scraped_date else f'Updated {symbol} data'
-            print(os.system(f'git commit -m "{commit_message}" --allow-empty'))
-            # print(os.system("git push origin main"))
-            print("\n")
+            result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
+            print(f"Git commit output: {result.stdout}")
+            if result.returncode != 0:
+                print(f"❌ Git commit failed: {result.stderr}")
+                continue
         else:
             print(f"⚠ No new data found for {symbol}. Skipping update.")
-    print(os.system("git push origin main"))
+
+    result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
+    print(f"Git push output: {result.stdout}")
+    if result.returncode != 0:
+        print(f"❌ Git push failed: {result.stderr}")
+        continue
+    print(f"✅ Successfully pushed {symbol} data to repository.")
 
 driver.quit()
 print("✅ Scraping completed for all symbols.")
