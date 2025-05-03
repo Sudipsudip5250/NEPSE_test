@@ -11,16 +11,33 @@ jobs:
 
     steps:
       # Step 1: Check the current day and skip if Friday or Saturday
-      - name: Check if not Friday or Saturday
+      - name: Check if today is a trading day
         id: check_day
         run: |
+          # Check for Friday or Saturday
           DAY=$(date -u +%A)
           if [[ "$DAY" == "Friday" || "$DAY" == "Saturday" ]]; then
             echo "Today is $DAY, skipping execution."
             exit 1
-          else
-            echo "Today is $DAY, proceeding with execution."
           fi
+
+          # Get today's date in YYYY-MM-DD format
+          TODAY=$(date -u +%F)
+          echo "Checking trading calendar for $TODAY..."
+
+          # Download the trading calendar CSV
+          curl -s -o trading_calendar.csv https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/refs/heads/main/other_nepse_detail/trading_calendar.csv
+
+          # Check if today is marked as a trading day
+          IS_TRADING_DAY=$(awk -F',' -v date="$TODAY" '$1 == date {print $2}' trading_calendar.csv)
+
+          if [[ "$IS_TRADING_DAY" != "True" ]]; then
+            echo "Today ($TODAY) is not a trading day (marked as '$IS_TRADING_DAY'). Skipping execution."
+            exit 1
+          fi
+
+          echo "Today is a trading day. Proceeding with execution."
+
 
       # Step 2: Checkout the repository with custom token
       - name: Checkout repository
