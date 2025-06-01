@@ -212,7 +212,7 @@ Date,IsTradingDay,HolidayName
 2025-06-04,True,
 2025-06-03,True,
 2025-06-02,True,
-2025-06-01,True,
+2025-06-01,False,Bhoto Jatra
 2025-05-31,False,Weekend
 2025-05-30,False,Weekend
 2025-05-29,False,Republic Day
