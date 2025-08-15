@@ -142,7 +142,7 @@ Date,IsTradingDay,HolidayName
 2025-08-13,True,
 2025-08-12,True,
 2025-08-11,True,
-2025-08-10,True,
+2025-08-10,True,Gai Jatra
 2025-08-09,False,Weekend
 2025-08-08,False,Weekend
 2025-08-07,True,
