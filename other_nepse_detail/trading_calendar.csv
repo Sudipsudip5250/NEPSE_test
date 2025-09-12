@@ -64,14 +64,14 @@ Date,IsTradingDay,HolidayName
 2025-10-30,True,
 2025-10-29,True,
 2025-10-28,True,
-2025-10-27,True,
+2025-10-27,False,Chhath Parva
 2025-10-26,True,
 2025-10-25,False,Weekend
 2025-10-24,False,Weekend
-2025-10-23,True,
-2025-10-22,True,
-2025-10-21,True,
-2025-10-20,True,
+2025-10-23,False,Bhai Tika
+2025-10-22,False,Mha Puja
+2025-10-21,False,Gai Puja
+2025-10-20,False,Laxmi Puja
 2025-10-19,True,
 2025-10-18,False,Weekend
 2025-10-17,False,Weekend
@@ -89,17 +89,17 @@ Date,IsTradingDay,HolidayName
 2025-10-05,True,
 2025-10-04,False,Weekend
 2025-10-03,False,Weekend
-2025-10-02,True,
-2025-10-01,True,
-2025-09-30,True,
-2025-09-29,True,
+2025-10-02,False,Bijaya Dashami
+2025-10-01,False,MahaNawami
+2025-09-30,False,MahaAstami
+2025-09-29,False,Fulpati
 2025-09-28,True,
 2025-09-27,False,Weekend
 2025-09-26,False,Weekend
 2025-09-25,True,
 2025-09-24,True,
 2025-09-23,True,
-2025-09-22,True,
+2025-09-22,False,Ghatasthapana
 2025-09-21,True,
 2025-09-20,False,Weekend
 2025-09-19,False,Weekend
@@ -110,9 +110,9 @@ Date,IsTradingDay,HolidayName
 2025-09-14,True,
 2025-09-13,False,Weekend
 2025-09-12,False,Weekend
-2025-09-11,True,
-2025-09-10,True,
-2025-09-09,True,
+2025-09-11,False,Emergency Holiday(GEN-Z protest)
+2025-09-10,False,Emergency Holiday(GEN-Z protest)
+2025-09-09,False,Emergency Holiday(GEN-Z protest)
 2025-09-08,True,
 2025-09-07,True,
 2025-09-06,False,Weekend
