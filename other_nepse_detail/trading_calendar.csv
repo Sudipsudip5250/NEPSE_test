@@ -103,8 +103,8 @@ Date,IsTradingDay,HolidayName
 2025-09-21,True,
 2025-09-20,False,Weekend
 2025-09-19,False,Weekend
-2025-09-18,False,Emergency Holiday
-2025-09-17,False,Emergency Holiday
+2025-09-18,True,
+2025-09-17,False,Mourn Day
 2025-09-16,False,Emergency Holiday
 2025-09-15,False,Emergency Holiday
 2025-09-14,False,Emergency Holiday
