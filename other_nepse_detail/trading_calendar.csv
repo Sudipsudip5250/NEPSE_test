@@ -85,8 +85,8 @@ Date,IsTradingDay,HolidayName
 2025-10-09,True,
 2025-10-08,True,
 2025-10-07,True,
-2025-10-06,True,
-2025-10-05,True,
+2025-10-06,False,Public Holiday
+2025-10-05,False,Public Holiday
 2025-10-04,False,Weekend
 2025-10-03,False,Weekend
 2025-10-02,False,Bijaya Dashami
