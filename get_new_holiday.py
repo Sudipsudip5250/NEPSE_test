@@ -199,16 +199,7 @@ years_to_scrape = list(range(start_year, 2006, -1))
 
 print(f"📅 Will scrape years: {', '.join(map(str, years_to_scrape))}")
 
-# Static page counts per year (adjust if the site changes)
-page_counts = {
-    2007: 7, 2008: 31, 2009: 32, 2010: 32, 2011: 32, 2012: 32, 2013: 30,
-    2014: 6, 2015: 6, 2016: 4, 2017: 4, 2018: 3, 2019: 3, 2020: 11,
-    2021: 3, 2022: 4, 2023: 4, 2024: 4, 2025: 5, 2026: 2
-}
-
 # Configure Selenium WebDriver
-# NOTE: Headless mode is disabled because ng-select dropdown doesn't initialize properly in headless mode
-# Instead, we use direct URL navigation to bypass the dropdown interaction issue
 print(f"\n🔧 Configuring browser...")
 chrome_options = Options()
 chrome_options.add_argument("--headless=new")
@@ -239,8 +230,7 @@ try:
     def select_year(year):
         """Select year by navigating directly to URL with year parameter"""
         try:
-            # Instead of interacting with ng-select (which doesn't work well in headless mode),
-            # navigate directly to the URL with year parameter
+            # Navigate directly to the URL with year parameter (bypasses ng-select dropdown)
             url_with_year = f"https://www.nepalstock.com.np/holiday-listing?fiscalYear={year}"
             driver.get(url_with_year)
             
@@ -254,23 +244,34 @@ try:
             print(f"  ⚠️ Error navigating to year {year}: {e}")
             return False
 
-    def go_to_page(page_num):
-        """Navigate to specific page"""
+    def has_next_page():
+        """Check if Next button exists and is NOT disabled"""
         try:
-            # Try to find pagination link with scroll and click
-            page_link = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((
-                    By.XPATH,
-                    f"//li/a/span[contains(text(),'{page_num}')] | //a[contains(@ng-click, 'pageNumber')]/span[text()='{page_num}']"
-                ))
+            # Find the "Next" pagination button
+            next_button = driver.find_element(By.XPATH, "//li[contains(@class, 'pagination-next')]")
+            
+            # Check if it has 'disabled' class
+            is_disabled = 'disabled' in next_button.get_attribute('class')
+            
+            return not is_disabled
+        except Exception as e:
+            # If Next button not found, assume no more pages
+            return False
+
+    def click_next_page():
+        """Click the Next button to go to next page"""
+        try:
+            # Find and click the "Next" button
+            next_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//li[contains(@class, 'pagination-next')]/a"))
             )
-            driver.execute_script("arguments[0].scrollIntoView();", page_link)
+            driver.execute_script("arguments[0].scrollIntoView();", next_button)
             time.sleep(1)
-            page_link.click()
+            next_button.click()
             time.sleep(2)
             return True
         except Exception as e:
-            print(f"  ⚠️ Error navigating to page {page_num}: {e}")
+            print(f"  ⚠️ Error clicking Next button: {e}")
             return False
 
     def scrape_table():
@@ -303,19 +304,15 @@ try:
             continue
 
         year_new = []
-        max_pages = page_counts.get(year, 1)
+        page_number = 1
 
-        for page in range(1, max_pages + 1):
-            if page > 1:
-                if not go_to_page(page):
-                    print(f"  ⏹️ No page {page}, stopping year {year}")
-                    break
-
-            print(f"  📄 Scraping page {page}/{max_pages}")
+        # Scrape pages until no Next button or no more new entries
+        while True:
+            print(f"  📄 Scraping page {page_number}...")
             page_data = scrape_table()
 
             if not page_data:
-                print(f"  ⏹️ No data on page {page}, stopping year {year}")
+                print(f"  ⏹️ No data on page {page_number}, stopping year {year}")
                 break
 
             new_entries = []
@@ -326,12 +323,23 @@ try:
                     existing_holidays.add(key)
 
             if not new_entries:
-                print(f"  ✅ No new entries on page {page}")
-                if page == 1:  # If first page has no new entries, stop processing this year
+                print(f"  ✅ No new entries on page {page_number}")
+                if page_number == 1:  # If first page has no new entries, stop processing this year
                     break
             else:
                 print(f"  ➕ Found {len(new_entries)} new holiday(s)")
                 year_new.extend(new_entries)
+
+            # Check if there's a next page
+            if has_next_page():
+                print(f"  ➡️ Next page available, continuing...")
+                if not click_next_page():
+                    print(f"  ⏹️ Failed to navigate to next page, stopping year {year}")
+                    break
+                page_number += 1
+            else:
+                print(f"  ✅ No more pages for {year} (processed {page_number} page(s))")
+                break
 
         all_new.extend(year_new)
 
@@ -427,15 +435,15 @@ if result.returncode != 0:
     exit(1)
 
 # Git commit
-# result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
-# print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
-# if result.returncode != 0:
-#     print(f"❌ Git commit failed: {result.stderr}")
-#     exit(1)
+result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
+print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
+if result.returncode != 0:
+    print(f"❌ Git commit failed: {result.stderr}")
+    exit(1)
 
 # Git push
-# result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
-# print(f"Git push: {result.stdout if result.stdout else 'Done'}")
+result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
+print(f"Git push: {result.stdout if result.stdout else 'Done'}")
 if result.returncode != 0:
     print(f"❌ Git push failed: {result.stderr}")
     exit(1)
