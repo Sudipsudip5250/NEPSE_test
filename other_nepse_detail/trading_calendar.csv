@@ -90,12 +90,12 @@ Date,IsTradingDay,HolidayName
 2026-01-02,False,Weekend
 2026-01-01,True,
 2025-12-31,True,
-2025-12-30,False,Tamu Lhosar
+2025-12-30,True,
 2025-12-29,True,
 2025-12-28,True,
 2025-12-27,False,Weekend
 2025-12-26,False,Weekend
-2025-12-25,False,Christmas Day
+2025-12-25,True,
 2025-12-24,True,
 2025-12-23,True,
 2025-12-22,True,
