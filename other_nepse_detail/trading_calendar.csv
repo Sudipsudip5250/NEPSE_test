@@ -90,12 +90,12 @@ Date,IsTradingDay,HolidayName
 2026-01-02,False,Weekend
 2026-01-01,True,
 2025-12-31,True,
-2025-12-30,True,
+2025-12-30,False,Tamu Lhosar
 2025-12-29,True,
 2025-12-28,True,
 2025-12-27,False,Weekend
 2025-12-26,False,Weekend
-2025-12-25,True,
+2025-12-25,False,Christmas Day
 2025-12-24,True,
 2025-12-23,True,
 2025-12-22,True,
@@ -116,7 +116,7 @@ Date,IsTradingDay,HolidayName
 2025-12-07,True,
 2025-12-06,False,Weekend
 2025-12-05,False,Weekend
-2025-12-04,True,
+2025-12-04,False,Udhauli Parva and Yomari Punhi
 2025-12-03,True,
 2025-12-02,True,
 2025-12-01,True,
@@ -157,7 +157,7 @@ Date,IsTradingDay,HolidayName
 2025-10-27,False,Chhath Parva
 2025-10-26,True,
 2025-10-25,False,Weekend
-2025-10-24,False,Weekend
+2025-10-24,False,Tihar Bida
 2025-10-23,False,Bhai Tika
 2025-10-22,False,Mha Puja
 2025-10-21,False,Gai Puja
@@ -175,7 +175,7 @@ Date,IsTradingDay,HolidayName
 2025-10-09,True,
 2025-10-08,True,
 2025-10-07,True,
-2025-10-06,False,Public Holiday
+2025-10-06,False,Public holiday
 2025-10-05,False,Public Holiday
 2025-10-04,False,Weekend
 2025-10-03,False,Dashain bida
