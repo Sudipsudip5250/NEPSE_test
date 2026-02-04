@@ -114,14 +114,28 @@ def add_weekend_holidays_for_month(year, month, calendar_df):
             if mask.any():
                 # Date exists - check if it's correctly marked as weekend
                 existing_row = calendar_df[mask].iloc[0]
-                if existing_row['IsTradingDay'] != False or existing_row['HolidayName'] != 'Weekend':
-                    # Correct the entry
+                is_trading_day = existing_row['IsTradingDay']
+                holiday_name = existing_row['HolidayName']
+                
+                if is_trading_day == False:
+                    # Already marked as non-trading day (weekend or holiday)
+                    # Only update HolidayName to "Weekend" if it's empty/None (don't overwrite public holidays)
+                    if pd.isna(holiday_name) or holiday_name == '' or holiday_name == 'Weekend':
+                        if holiday_name != 'Weekend':
+                            calendar_df.loc[mask, 'HolidayName'] = 'Weekend'
+                            weekends_corrected += 1
+                            print(f"  ✏️ Corrected {date_str} to Weekend")
+                        else:
+                            weekends_existing += 1
+                    else:
+                        # Already has a public holiday name - don't overwrite it
+                        weekends_existing += 1
+                else:
+                    # IsTradingDay is True but it's a weekend - correct it
                     calendar_df.loc[mask, 'IsTradingDay'] = False
                     calendar_df.loc[mask, 'HolidayName'] = 'Weekend'
                     weekends_corrected += 1
                     print(f"  ✏️ Corrected {date_str} to Weekend")
-                else:
-                    weekends_existing += 1
             else:
                 # Date doesn't exist - add it
                 new_row = pd.DataFrame([{
@@ -192,61 +206,66 @@ page_counts = {
     2021: 3, 2022: 4, 2023: 4, 2024: 4, 2025: 5, 2026: 2
 }
 
-# Configure Selenium WebDriver with headless mode
-print(f"\n🔧 Configuring headless browser...")
+# Configure Selenium WebDriver
+# NOTE: Headless mode is disabled because ng-select dropdown doesn't initialize properly in headless mode
+# Instead, we use direct URL navigation to bypass the dropdown interaction issue
+print(f"\n🔧 Configuring browser...")
 chrome_options = Options()
-# chrome_options.add_argument("--headless=new")
-# chrome_options.add_argument("--no-sandbox")
-# chrome_options.add_argument("--disable-dev-shm-usage")
-# chrome_options.add_argument("--disable-gpu")
-# chrome_options.add_argument("--window-size=1920x1080")
-# chrome_options.add_argument("--disable-application-cache")
-# chrome_options.add_argument("--log-level=3")
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--window-size=1920x1080")
+chrome_options.add_argument("--disable-application-cache")
+chrome_options.add_argument("--log-level=3")
+chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
+driver.set_page_load_timeout(30)
 
 print(f"✅ Browser configured successfully")
 
 try:
     driver.get("https://nepalstock.com.np/holiday-listing")
     print(f"✅ Loaded holiday listing page")
-    time.sleep(3)
+    # Wait for Angular to render completely
+    WebDriverWait(driver, 30).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+    time.sleep(5)  # Additional wait for ng-select to initialize
 
     def select_year(year):
-        """Select year from dropdown"""
+        """Select year by navigating directly to URL with year parameter"""
         try:
-            dropdown = WebDriverWait(driver, 20).until(
-                EC.presence_of_all_elements_located((By.TAG_NAME, "ng-select"))
-            )[0]
-            driver.execute_script("arguments[0].scrollIntoView(true);", dropdown)
-            WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.TAG_NAME, "ng-select")))
-            dropdown.click()
-            time.sleep(1)
-
-            year_option = WebDriverWait(driver, 15).until(
-                EC.element_to_be_clickable((
-                    By.XPATH,
-                    f"//div[contains(@class,'ng-dropdown-panel')]//span[text()='{year}']"
-                ))
+            # Instead of interacting with ng-select (which doesn't work well in headless mode),
+            # navigate directly to the URL with year parameter
+            url_with_year = f"https://www.nepalstock.com.np/holiday-listing?fiscalYear={year}"
+            driver.get(url_with_year)
+            
+            # Wait for page to load and table to be present
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "table"))
             )
-            year_option.click()
             time.sleep(2)
             return True
         except Exception as e:
-            print(f"  ⚠️ Error selecting year {year}: {e}")
+            print(f"  ⚠️ Error navigating to year {year}: {e}")
             return False
 
     def go_to_page(page_num):
         """Navigate to specific page"""
         try:
+            # Try to find pagination link with scroll and click
             page_link = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((
                     By.XPATH,
-                    f"//li/a/span[text()='{page_num}']"
+                    f"//li/a/span[contains(text(),'{page_num}')] | //a[contains(@ng-click, 'pageNumber')]/span[text()='{page_num}']"
                 ))
             )
             driver.execute_script("arguments[0].scrollIntoView();", page_link)
+            time.sleep(1)
             page_link.click()
             time.sleep(2)
             return True
@@ -408,11 +427,11 @@ if result.returncode != 0:
     exit(1)
 
 # Git commit
-result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
-print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
-if result.returncode != 0:
-    print(f"❌ Git commit failed: {result.stderr}")
-    exit(1)
+# result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
+# print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
+# if result.returncode != 0:
+#     print(f"❌ Git commit failed: {result.stderr}")
+#     exit(1)
 
 # Git push
 # result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
