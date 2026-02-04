@@ -169,12 +169,12 @@ Date,IsTradingDay,HolidayName
 2025-09-14,False,Emergency Holiday
 2025-09-13,False,Weekend
 2025-09-12,False,Weekend
-2025-09-11,False,Emergency Holiday(GEN-Z protest)
-2025-09-10,False,Emergency Holiday(GEN-Z protest)
-2025-09-09,False,Emergency Holiday(GEN-Z protest)
+2025-09-11,False,Emergency Holiday
+2025-09-10,False,Emergency Holiday
+2025-09-09,False,Emergency Holiday
 2025-09-08,True,
 2025-09-07,True,
-2025-09-06,False,Weekend
+2025-09-06,False,Indra Jatra
 2025-09-05,False,Weekend
 2025-09-04,True,
 2025-09-03,True,
@@ -195,14 +195,14 @@ Date,IsTradingDay,HolidayName
 2025-08-19,True,
 2025-08-18,True,
 2025-08-17,True,
-2025-08-16,False,Weekend
+2025-08-16,False,Shree Krishna Janmasthami
 2025-08-15,False,Weekend
 2025-08-14,True,
 2025-08-13,True,
 2025-08-12,True,
 2025-08-11,True,
 2025-08-10,True,Gai Jatra
-2025-08-09,False,Weekend
+2025-08-09,False,Janai Purnima
 2025-08-08,False,Weekend
 2025-08-07,True,
 2025-08-06,True,
