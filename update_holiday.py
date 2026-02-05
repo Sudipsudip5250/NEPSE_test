@@ -1,5 +1,6 @@
 """
-This code will update new holiday list including weekend holidays (Friday & Saturday)
+This code updates the holiday calendar including weekends and public holidays,
+then generates only_public_holidays.csv and public_and_weekly_holidays.csv from it.
 Runs on the 1st of every month via GitHub Actions
 
 KEY FEATURES:
@@ -8,6 +9,8 @@ KEY FEATURES:
 3. When scraping finds holidays in any month, ensures that month has complete data
 4. Dynamic pagination (no hardcoded page counts)
 5. Proper wait times for reliable scraping
+6. Generates separate CSV for public holidays only and all non-trading days
+7. Commits and pushes only if changes are made (no empty commits)
 """
 
 import os
@@ -63,14 +66,14 @@ print("="*70)
 
 # --- Part 0: Load existing calendar (local or GitHub) ---
 
-CALANDER_CSV_PATH = "other_nepse_detail/trading_calendar.csv"
-CALANDER_GITHUB_RAW = "https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/main/other_nepse_detail/trading_calendar.csv"
+CALENDAR_CSV_PATH = "other_nepse_detail/trading_calendar.csv"
+CALENDAR_GITHUB_RAW = "https://raw.githubusercontent.com/Sudipsudip5250/Nepal_Stock_Data/main/other_nepse_detail/trading_calendar.csv"
 
-if os.path.exists(CALANDER_CSV_PATH):
-    calendar_df = pd.read_csv(CALANDER_CSV_PATH, parse_dates=['Date'])
-    print(f"✅ Loaded local {CALANDER_CSV_PATH}")
+if os.path.exists(CALENDAR_CSV_PATH):
+    calendar_df = pd.read_csv(CALENDAR_CSV_PATH, parse_dates=['Date'])
+    print(f"✅ Loaded local {CALENDAR_CSV_PATH}")
 else:
-    calendar_df = pd.read_csv(CALANDER_GITHUB_RAW, parse_dates=['Date'])
+    calendar_df = pd.read_csv(CALENDAR_GITHUB_RAW, parse_dates=['Date'])
     print(f"✅ Fetched calendar from GitHub")
 
 calendar_df['date_str'] = calendar_df['Date'].dt.strftime("%Y-%m-%d")
@@ -278,11 +281,11 @@ try:
                 return True
             return False
         except Exception as e:
-            print(f"  ⚠️ Error resetting pagination: {e}")
+            print(f"  ⚠️ Error resetting to page 1: {e}")
             return False
 
     def select_year(year):
-        """Select year by clicking the dropdown and selecting the option"""
+        """Select a year from the dropdown"""
         try:
             print(f"  🔄 Selecting year {year} via dropdown...")
             
@@ -521,62 +524,102 @@ print(f"{'='*70}")
 # Remove temporary column and sort
 calendar_df = calendar_df.drop(columns=['date_str'], errors='ignore')
 calendar_df = calendar_df.sort_values('Date', ascending=False).reset_index(drop=True)
-calendar_df.to_csv(CALANDER_CSV_PATH, index=False)
+calendar_df.to_csv(CALENDAR_CSV_PATH, index=False)
 
-print(f"✅ Saved to {CALANDER_CSV_PATH}")
+print(f"✅ Saved to {CALENDAR_CSV_PATH}")
 print(f"📊 Total records: {len(calendar_df)}")
 
-# --- Part 5: Git Operations ---
+# --- Part 5: Generate only_public_holidays.csv ---
 
 print(f"\n{'='*70}")
-print(f"📤 Committing Changes to Git")
+print(f"🔄 Generating Only Public Holidays List")
 print(f"{'='*70}")
 
-# Prepare commit message
-changes_made = []
+ONLY_PUBLIC_HOLIDAYS_CSV_PATH = "other_nepse_detail/only_public_holidays.csv"
+
+print(f"\n📅 Extracting public holidays...")
+public_holiday_df = calendar_df[(calendar_df['IsTradingDay'] == False) & (calendar_df['HolidayName'] != 'Weekend')]
+public_holiday_df = public_holiday_df[['Date', 'HolidayName']].copy()
+public_holiday_df = public_holiday_df.sort_values('Date', ascending=False).reset_index(drop=True)
+
+print(f"📊 Found {len(public_holiday_df)} public holidays")
+
+public_holiday_df.to_csv(ONLY_PUBLIC_HOLIDAYS_CSV_PATH, index=False)
+print(f"✅ Saved to {ONLY_PUBLIC_HOLIDAYS_CSV_PATH}")
+
+# --- Part 6: Generate public_and_weekly_holidays.csv ---
+
+print(f"\n{'='*70}")
+print(f"🔄 Generating Full Holiday List (Public and Weekends)")
+print(f"{'='*70}")
+
+FULL_HOLIDAY_LIST_CSV_PATH = "other_nepse_detail/public_and_weekly_holidays.csv"
+
+print(f"\n📅 Extracting all non-trading days...")
+full_holiday_df = calendar_df[calendar_df['IsTradingDay'] == False]
+full_holiday_df = full_holiday_df[['Date', 'HolidayName']].copy()
+full_holiday_df = full_holiday_df.sort_values('Date', ascending=False).reset_index(drop=True)
+
+print(f"📊 Found {len(full_holiday_df)} non-trading days (including weekends)")
+
+full_holiday_df.to_csv(FULL_HOLIDAY_LIST_CSV_PATH, index=False)
+print(f"✅ Saved to {FULL_HOLIDAY_LIST_CSV_PATH}")
+
+# --- Part 7: Git Operations (only if changes) ---
+
+print(f"\n{'='*70}")
+print(f"📤 Checking for Changes and Committing to Git")
+print(f"{'='*70}")
+
+files_to_check = [
+    "other_nepse_detail/trading_calendar.csv",
+    "other_nepse_detail/only_public_holidays.csv",
+    "other_nepse_detail/public_and_weekly_holidays.csv"
+]
+
+# Add all files (git add is safe even if no changes)
+for file_path in files_to_check:
+    result = subprocess.run(f"git add {file_path}", shell=True, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"❌ Git add failed for {file_path}: {result.stderr}")
+        exit(1)
+
+# Check for staged changes
+result = subprocess.run("git diff --cached --name-only", shell=True, capture_output=True, text=True)
+staged_files = result.stdout.strip().splitlines()
+
+if staged_files:
+    print(f"📝 Changes detected in: {', '.join(staged_files)}")
+    commit_message = "Updated holiday lists"
+    print(f"📝 Commit message: {commit_message}")
+
+    result = subprocess.run(f'git commit -m "{commit_message}"', shell=True, capture_output=True, text=True)
+    print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
+    if result.returncode != 0:
+        print(f"❌ Git commit failed: {result.stderr}")
+        exit(1)
+
+    result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
+    print(f"Git push: {result.stdout if result.stdout else 'Done'}")
+    if result.returncode != 0:
+        print(f"❌ Git push failed: {result.stderr}")
+        exit(1)
+else:
+    print("ℹ️ No changes detected - skipping commit and push")
+
+print(f"\n{'='*70}")
+print(f"🎉 Holiday Update Process Completed Successfully!")
+print(f"{'='*70}")
+
+# Final Summary
 total_weekends_added = total_added + additional_weekends_added
 total_weekends_corrected = total_corrected + additional_weekends_corrected
+public_holidays_added = len(all_new) if 'all_new' in locals() else 0
 
-if total_weekends_added > 0:
-    changes_made.append(f"{total_weekends_added} weekend(s) added")
-if total_weekends_corrected > 0:
-    changes_made.append(f"{total_weekends_corrected} weekend(s) corrected")
-if len(all_new) > 0:
-    changes_made.append(f"{len(all_new)} public holiday(s) added")
-
-if changes_made:
-    commit_message = f"Updated holiday calendar: {', '.join(changes_made)}"
-else:
-    commit_message = "Holiday calendar checked - no changes needed"
-
-print(f"📝 Commit message: {commit_message}")
-
-# Git add
-result = subprocess.run("git add other_nepse_detail/trading_calendar.csv", shell=True, capture_output=True, text=True)
-print(f"Git add: {result.stdout if result.stdout else 'Done'}")
-if result.returncode != 0:
-    print(f"❌ Git add failed: {result.stderr}")
-    exit(1)
-
-# Git commit
-result = subprocess.run(f'git commit -m "{commit_message}" --allow-empty', shell=True, capture_output=True, text=True)
-print(f"Git commit: {result.stdout if result.stdout else 'Done'}")
-if result.returncode != 0:
-    print(f"❌ Git commit failed: {result.stderr}")
-    exit(1)
-
-# Git push
-result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
-print(f"Git push: {result.stdout if result.stdout else 'Done'}")
-if result.returncode != 0:
-    print(f"❌ Git push failed: {result.stderr}")
-    exit(1)
-
-print(f"\n{'='*70}")
-print(f"🎉 Holiday Calendar Update Completed Successfully!")
-print(f"{'='*70}")
 print(f"\n📊 Final Summary:")
 print(f"  - Weekend holidays added: {total_weekends_added}")
 print(f"  - Weekend holidays corrected: {total_weekends_corrected}")
-print(f"  - Public holidays added: {len(all_new)}")
+print(f"  - Public holidays added: {public_holidays_added}")
 print(f"  - Total calendar entries: {len(calendar_df)}")
+print(f"  - Public holidays extracted: {len(public_holiday_df)}")
+print(f"  - Non-trading days extracted: {len(full_holiday_df)}")
